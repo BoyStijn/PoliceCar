@@ -46,8 +46,53 @@ local function DisableLight(veh)
     vehicle.set_vehicle_headlight_color(veh, -1)
 end
 
-local player_main_menu = menu.add_player_feature("PoliceCar", "parent", 0)
-local player_light_menu = menu.add_player_feature("Lights", "value_str", player_main_menu.id, function(f, pid)
+local function doSiren(f, pid)
+
+    while not streaming.has_model_loaded(1127131465) do
+        streaming.request_model(1127131465)
+        system.wait(200)
+    end
+
+    if f.on then
+        if player.is_player_in_any_vehicle(pid) then 
+            local player_vehicle = player.get_player_vehicle(pid)
+
+            local offset = v3(0,5,0)
+
+            local coords = entity.get_entity_coords(player_vehicle)
+            local heading = entity.get_entity_heading(player_vehicle)
+            local model = player.get_player_model(pid)
+
+            local siren_vehicle = vehicle.create_vehicle(1127131465, offset + coords, heading, true, false)
+            local siren_ped = ped.create_ped(0, model, offset + coords, heading, true, false)
+
+            local seat = vehicle.get_free_seat(siren_vehicle)
+            ped.set_ped_into_vehicle(siren_ped, siren_vehicle, seat)
+
+            native.call(0xF4924635A19EB37D, siren_vehicle, true)
+
+            native.call(0xEA1C610A04DB6BBB, siren_vehicle, false, 0)
+            native.call(0xEA1C610A04DB6BBB, siren_ped, false, 0)
+
+            entity.attach_entity_to_entity(siren_vehicle, player_vehicle, 0, v3(0), v3(0), false, false, false, 0, true)
+        
+            PoliceCarCache[pid] = PoliceCarCache[pid] or {}
+            PoliceCarCache[pid].siren_vehicle = siren_vehicle
+            PoliceCarCache[pid].siren_ped = siren_ped
+
+        else 
+            menu.notify("Player must be in a vehicle!", "PoliceCar", 3, 255)
+        end
+
+    else
+        if PoliceCarCache[pid] and PoliceCarCache[pid].siren_vehicle then
+            entity.delete_entity(PoliceCarCache[pid].siren_ped)
+            entity.delete_entity(PoliceCarCache[pid].siren_vehicle)
+        end
+    end
+end
+
+local function doLights(f, pid)
 
     if PoliceCarCache[pid] and PoliceCarCache[pid].light_thread then
         menu.delete_thread(PoliceCarCache[pid].light_thread)
@@ -97,6 +142,15 @@ local player_light_menu = menu.add_player_feature("Lights", "value_str", player_
             DisableLight(PoliceCarCache[pid].p_v)
         end
     end
+end
+
+
+local player_main_menu = menu.add_player_feature("PoliceCar", "parent", 0)
+local player_main_local_menu = menu.add_feature("PoliceCar", "parent", 0)
+
+local player_light_menu = menu.add_player_feature("Lights", "value_str", player_main_menu.id, doLights)
+local player_light_local_menu = menu.add_feature("Lights", "value_str", player_main_local_menu.id, function (f)
+    doLights(f, player.player_id())
 end)
 
 local light_options <const> = {
@@ -106,49 +160,9 @@ local light_options <const> = {
 }
 
 player_light_menu:set_str_data(light_options)
+player_light_local_menu:set_str_data(light_options)
 
-menu.add_player_feature("Siren", "toggle", player_main_menu.id, function(f, pid)
-
-    while not streaming.has_model_loaded(1127131465) do
-        streaming.request_model(1127131465)
-        system.wait(200)
-    end
-
-    if f.on then
-        if player.is_player_in_any_vehicle(pid) then 
-            local player_vehicle = player.get_player_vehicle(pid)
-
-            local offset = v3(0,5,0)
-
-            local coords = entity.get_entity_coords(player_vehicle)
-            local heading = entity.get_entity_heading(player_vehicle)
-            local model = player.get_player_model(pid)
-
-            local siren_vehicle = vehicle.create_vehicle(1127131465, offset + coords, heading, true, false)
-            local siren_ped = ped.create_ped(0, model, offset + coords, heading, true, false)
-
-            local seat = vehicle.get_free_seat(siren_vehicle)
-            ped.set_ped_into_vehicle(siren_ped, siren_vehicle, seat)
-
-            native.call(0xF4924635A19EB37D, siren_vehicle, true)
-
-            native.call(0xEA1C610A04DB6BBB, siren_vehicle, false, 0)
-            native.call(0xEA1C610A04DB6BBB, siren_ped, false, 0)
-
-            entity.attach_entity_to_entity(siren_vehicle, player_vehicle, 0, v3(0), v3(0), false, false, false, 0, true)
-        
-            PoliceCarCache[pid] = PoliceCarCache[pid] or {}
-            PoliceCarCache[pid].siren_vehicle = siren_vehicle
-            PoliceCarCache[pid].siren_ped = siren_ped
-
-        else 
-            menu.notify("Player must be in a vehicle!", "PoliceCar", 3, 255)
-        end
-
-    else
-        if PoliceCarCache[pid] and PoliceCarCache[pid].siren_vehicle then
-            entity.delete_entity(PoliceCarCache[pid].siren_ped)
-            entity.delete_entity(PoliceCarCache[pid].siren_vehicle)
-        end
-    end
+menu.add_player_feature("Siren", "toggle", player_main_menu.id, doSiren)
+menu.add_feature("Siren", "toggle", player_main_local_menu.id, function (f)
+    doSiren(f, player.player_id())
 end)
