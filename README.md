@@ -21,14 +21,4 @@ Lights and Siren can be turned off after you leave the car
 
 ## Changelog
 
-### v1.1
-Cleaned up the script 
-
-### v1.2
-Added multiple light modes
-
-### 1.3
-Fixed police car model used for siren not being 
-
-### 1.4
-Added PoliceCar to main menu script features to allow hotkeys
+-> changelog moved to releases
