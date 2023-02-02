@@ -1,6 +1,12 @@
 local PoliceCarCache = {}   -- Cache for Player Vehicle, Police Vehicle, Ped and Light Thread
-local version = "1.5"       -- Current Script Version for Auto Update
+local version = "1.6"       -- Current Script Version for Auto Update
 local json = { _version = "0.1.2" } -- Json Lib
+
+local light_options <const> = {
+    "2 Flash",
+    "3 Flash",
+    "Normal",
+}
 
 -- Check for Natives
 if not menu.is_trusted_mode_enabled(1 << 2) then 
@@ -62,11 +68,14 @@ local function doLights(f, pid)
             native.call(0x34E710FF01247C5A, player_vehicle, 2)
             native.call(0x8B7FD87F0DDB421E, player_vehicle, true)
 
-            
+            local array_size = #light_options
 
             EnableLight(player_vehicle)
             local light_thread = menu.create_thread(function ()
-                local flicker = f.value + 1
+                local flicker = f.value + 2
+                if f.value > #light_options - 2 then
+                    flicker = 1
+                end
                 local delay = 200 // flicker
                 while(f.on) do
                     for j = 0,flicker,1 do
@@ -134,10 +143,6 @@ local function doSiren(f, pid)
             entity.attach_entity_to_entity(siren_vehicle, player_vehicle, 0, v3(0), v3(0), false, false, false, 0, true)
         
             native.call(0xBE5C1255A1830FF5, player_vehicle, true)
-            native.call(0x9BECD4B9FEF3F8A6 , player_vehicle, true)
-
-            native.call(0xBE5C1255A1830FF5, siren_vehicle, true)
-            native.call(0x9BECD4B9FEF3F8A6 , siren_vehicle, true)
 
             PoliceCarCache[pid] = PoliceCarCache[pid] or {}
             PoliceCarCache[pid].siren_vehicle = siren_vehicle
@@ -229,12 +234,6 @@ local start_thread = menu.create_thread(function ()
     local player_light_local_menu = menu.add_feature("Lights", "value_str", player_main_local_menu.id, function (f)
         doLights(f, player.player_id())
     end)
-    
-    local light_options <const> = {
-        "Normal",
-        "2 Flash",
-        "3 Flash"
-    }
 
     -- Set Light Option names
     --player_light_menu:set_str_data(light_options)
