@@ -1,5 +1,5 @@
 local PoliceCarCache = {}   -- Cache for Player Vehicle, Police Vehicle, Ped and Light Thread
-local version = "1.6"       -- Current Script Version for Auto Update
+local version = "1.7"       -- Current Script Version for Auto Update
 local json = { _version = "0.1.2" } -- Json Lib
 
 local light_options <const> = {
@@ -141,7 +141,8 @@ local function doSiren(f, pid)
             native.call(0xEA1C610A04DB6BBB, siren_ped, false, 0)
 
             entity.attach_entity_to_entity(siren_vehicle, player_vehicle, 0, v3(0), v3(0), false, false, false, 0, true)
-        
+            entity.set_entity_collision(siren_vehicle, true, true, false)
+
             native.call(0xBE5C1255A1830FF5, player_vehicle, true)
 
             PoliceCarCache[pid] = PoliceCarCache[pid] or {}
